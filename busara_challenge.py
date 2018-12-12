@@ -1,65 +1,49 @@
+# Basic
 import numpy as np
 import pandas as pd
 
+# ML and Preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import accuracy_score
 
+# Load data
 train = pd.read_csv("data/train.csv")
-test = pd.read_csv("data/test.csv")
+test = to_submit = pd.read_csv("data/test.csv")
 
-# train.info()
-# test.info()
-
-train_columns = train.columns
-# print(train_columns)
-
-# train = train.loc[:, train.isnull().mean() < 0.8]
-# print([train.isnull().mean() < 0.8])
+# Data preprocessing
 train = train.dropna(axis=1)
-train_columns = train.columns
 depressed = train['depressed']
-surveyid = train['surveyid']
 
 train = train.drop(columns=['surveyid', 'survey_date', 'depressed'])
+
+# Columns that will be used with test/submission set
 train_columns = train.columns
-# test['age'] = test[test['age'] == '.d']['age'].mean()
-# print(test[test['age'] == '.d']['age'])
 
-# Remove the '.d'
-test['age'] = test['age'].replace('.d', test[test['age'] != '.d']['age'].median())
-test['age'] = test['age'].fillna(test[test['age'] != '.d']['age'].median())
-# test[test['age'] == '.d']['age'] = test[test['age'] != '.d']['age'].median()
-# print(test[test['age'] == '.d']['age'].values)
-# print(test[test['age'] != '.d']['age'].median())
-# print("Mean: ", test['age'].describe())
-
-def model_accuracy(model, X_v, y_v):
-    model.fit(X, y)
-    return model.score(X_v, y_v)
-
-test = test[train_columns]
+# Assign values to X and y variables
 X = train.values
 y = depressed.values
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-logisticRegressionCV = LogisticRegressionCV(Cs=10, n_jobs=2, penalty='l2', max_iter=100)
-
+# Model
 logisticRegressionModel = LogisticRegression()
-# logisticRegressionModel.fit(X_train, y_train)
-
-print(model_accuracy(logisticRegressionModel, X_train, y_train))
-print(model_accuracy(logisticRegressionModel, X_test, y_test))
-
-print(model_accuracy(logisticRegressionCV, X_train, y_train))
-print(model_accuracy(logisticRegressionCV, X_test, y_test))
+logisticRegressionModel.fit(X_train, y_train)
 
 # print(logisticRegressionModel.score(X_train, y_train))
 # print(logisticRegressionModel.score(X_test, y_test))
+# print(accuracy_score(y_train, logisticRegressionModel.predict(X_train)))
 # print(accuracy_score(y_test, logisticRegressionModel.predict(X_test)))
 
-# X_submit = test.values
-# print(logisticRegressionModel.predict(X_submit))
-# print(test.isnull().mean())
+# Remove the '.d'
+to_submit['age'] = to_submit['age'].replace('.d', to_submit[to_submit['age'] != '.d']['age'].median())
+
+# Replace NaN values with median
+to_submit['age'] = to_submit['age'].fillna(to_submit[to_submit['age'] != '.d']['age'].median())
+
+to_submit = to_submit[train_columns]
+
+X_submit = to_submit.values
+y_submit = logisticRegressionModel.predict(X_submit)
+test['depressed'] = pd.DataFrame(y_submit)
+# test[['surveyid','depressed']].to_csv('submission.csv', index=False)
